@@ -1153,16 +1153,19 @@ function renderAmountInputs() {
         const a = state.amounts[g.key] || {};
         let inner = `<div style="font-size:14px;font-weight:800;color:var(--accent);margin:18px 0 8px;">${g.label}</div>`;
         if (g.hasPackage) {
+            inner += `<div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:6px;">패키지 선택 (택1)</div>`;
             inner += `<div class="days-selector" style="flex-direction:column; gap:8px;">` +
                 ['basic','standard','premium'].map(p => {
                     const act = a.mode === 'package' && a.pkg === p ? ' active' : '';
                     return `<button class="days-option${act}" onclick="setGroupPackage('${g.key}','${p}',this)">
                         <div class="num">${PKG_LABEL[p]} · 약 ${PACKAGES[p]}만원</div></button>`;
                 }).join('') + `</div>`;
+            inner += `<div style="display:flex;align-items:center;gap:10px;margin:14px 0 4px;color:var(--text-secondary);font-size:12px;font-weight:700;">
+                <span style="flex:1;height:1px;background:var(--border);"></span>또는<span style="flex:1;height:1px;background:var(--border);"></span></div>`;
         }
         const cv = (a.mode === 'custom' && a.value) ? a.value : '';
         inner += `<div class="input-group" style="margin-top:10px;">
-            <label>${g.hasPackage ? '직접 금액 입력 (선택)' : '예상 금액'}</label>
+            <label>${g.hasPackage ? '직접 금액 입력' : '예상 금액'}</label>
             <div class="input-wrapper">
                 <input type="number" id="amt_${g.key}" placeholder="예: 300" value="${cv}" oninput="setGroupAmount('${g.key}', this.value)">
                 <span class="unit">만원</span>
