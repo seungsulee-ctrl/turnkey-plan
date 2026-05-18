@@ -1154,7 +1154,7 @@ function renderAmountInputs() {
         let inner = `<div style="font-size:14px;font-weight:800;color:var(--accent);margin:18px 0 8px;">${g.label}</div>`;
         if (g.hasPackage) {
             inner += `<div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:6px;">패키지 선택 (택1)</div>`;
-            inner += `<div class="days-selector" style="flex-direction:column; gap:8px;">` +
+            inner += `<div class="days-selector" id="pkg_${g.key}" style="flex-direction:column; gap:8px;">` +
                 ['basic','standard','premium'].map(p => {
                     const act = a.mode === 'package' && a.pkg === p ? ' active' : '';
                     return `<button class="days-option${act}" onclick="setGroupPackage('${g.key}','${p}',this)">
@@ -1183,14 +1183,21 @@ function setGroupPackage(key, pkg, el) {
 }
 function setGroupAmount(key, val) {
     const v = parseFloat(val);
+    const ps = document.getElementById('pkg_' + key); // 패키지 버튼 컨테이너 (소모품/비품만 존재)
     if (v > 0) {
+        // 직접입력 → 위 패키지 선택 전부 해제
         state.amounts[key] = { mode:'custom', value: v };
-        const sel = document.querySelector('#amt_' + key);
-        const ds = sel && sel.closest('.input-group').previousElementSibling;
-        if (ds && ds.classList.contains('days-selector')) ds.querySelectorAll('.days-option').forEach(b => b.classList.remove('active'));
+        if (ps) ps.querySelectorAll('.days-option').forEach(b => b.classList.remove('active'));
     } else {
+        // 입력 비움 → 소모품/비품은 기본 패키지(베이직)로 복귀 표시
         const g = GROUP_BY_KEY[key];
-        state.amounts[key] = g.hasPackage ? { mode:'package', pkg: (state.amounts[key] && state.amounts[key].pkg) || 'basic' } : { mode:'custom', value:null };
+        if (g.hasPackage) {
+            const pkg = (state.amounts[key] && state.amounts[key].pkg) || 'basic';
+            state.amounts[key] = { mode:'package', pkg };
+            if (ps) ps.querySelectorAll('.days-option').forEach((b,i) => b.classList.toggle('active', ['basic','standard','premium'][i] === pkg));
+        } else {
+            state.amounts[key] = { mode:'custom', value:null };
+        }
     }
 }
 function amountText(key) {
