@@ -810,7 +810,7 @@
         <h1>내 한의원<br>턴키 패키지 설계하기</h1>
         <p class="subtitle">개원 규모와 예산을 입력하면<br>필요 물품과 예상 견적을 자동으로 설계합니다.</p>
 
-        <button class="btn-primary" id="startBtn" onclick="goToStep('step1')">
+        <button class="btn-primary" id="startBtn" onclick="startFresh()">
             예상 견적 짜보기
         </button>
     </div>
@@ -1103,7 +1103,36 @@ function goToStep(stepId) {
     if (stepId === 'step3') renderAmountInputs();
     if (stepId === 'step4') renderSubCats();
 }
-function goHome() { goToStep('landing'); }
+// 전체 초기화 — 입력값/선택 전부 태초 상태로
+function resetAll() {
+    state.bed1 = 2; state.bed2 = 3; state.staff = 4;
+    state.totalBeds = 0; state.totalRooms = 0;
+    state.selectedGroups = [];
+    state.amounts = {};
+    state.deselectedCats = [];
+    state.contact = '';
+
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    set('contactInfo', '');
+    set('bed1', 2); set('bed2', 3); set('staff', 4);
+
+    // STEP5 전송 UI 초기화
+    const sb = document.getElementById('sendBtn');
+    if (sb) { sb.disabled = false; sb.textContent = '개원실장에게 전달하기'; }
+    const ss = document.getElementById('sendStatus'); if (ss) { ss.textContent = ''; }
+    const ct = document.getElementById('ctaTitle'); if (ct) { ct.textContent = '설문 요약 완료'; }
+    const ce = document.getElementById('contactEcho'); if (ce) { ce.textContent = ''; }
+
+    // 동적 영역 비우기 (이동 시 다시 렌더되지만 깔끔히)
+    ['groupSelect', 'amountInputs', 'subCatSelect', 'summaryBody', 'selectedCatList'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.innerHTML = '';
+    });
+
+    calcScale();
+    validateStep1();
+}
+function goHome() { resetAll(); goToStep('landing'); }
+function startFresh() { resetAll(); goToStep('step1'); }
 
 // ===== Landing ===== (QR/체크박스 제거 — 버튼 바로 진입)
 
