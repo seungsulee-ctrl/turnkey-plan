@@ -1092,7 +1092,7 @@
             <p>아래 버튼을 누르면 개원실장에게<br>이 내용이 전달됩니다.</p>
             <button class="btn-cta" id="sendBtn" onclick="submitToSlack()">개원실장에게 전달하기</button>
             <div id="sendStatus" style="margin-top:14px; font-size:14px; font-weight:700;"></div>
-            <button id="previewBtn" class="btn-secondary" style="display:none; margin-top:14px;" onclick="openPreview()">📄 추천 상품 미리보기 (PDF)</button>
+            <button id="previewBtn" class="btn-secondary" style="display:none; margin-top:14px;" onclick="openPreview()">추천 상품 미리보기</button>
         </div>
 
         <button class="btn-secondary" onclick="openInfo('step5')" style="margin-bottom:16px;">💡 구매 혜택 · 배송 안내 · 추천상품 PDF</button>
@@ -1147,11 +1147,10 @@
 <div id="preview" class="step">
     <div class="container">
         <div class="result-hero no-print">
-            <div class="label">주문서 생성 전 미리보기</div>
             <div class="amount" style="font-size:24px;">추천 상품 미리보기</div>
         </div>
         <div id="previewHead" style="display:none;"></div>
-        <p class="desc no-print" style="text-align:center; margin-bottom:8px;">선택하신 세부 카테고리의 <strong>판매 TOP 15</strong> 상품입니다.<br>상품명을 누르면 메디마켓에서 가격·상세를 확인하실 수 있습니다.</p>
+        <p class="desc no-print" style="text-align:center; margin-bottom:8px;">선택하신 세부 카테고리의 <strong>판매 TOP 10</strong> 상품입니다.<br>상품명을 누르면 메디마켓에서 가격·상세를 확인하실 수 있습니다.</p>
         <div id="previewBody"></div>
         <div class="btn-group no-print">
             <button class="btn-back" onclick="goToStep('step5')">닫기</button>
@@ -1309,8 +1308,8 @@ async function openPreview() {
     const ymd = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
     document.getElementById('previewHead').innerHTML =
         `<div style="text-align:center; padding:10px 0; border-bottom:2px solid var(--text); margin-bottom:6px;">
-            <div style="font-size:18px; font-weight:800;">메디스트림 개원 추천 상품 미리보기</div>
-            <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">${who ? who + ' · ' : ''}${ymd} · 판매 TOP 15 · 가격은 메디마켓 링크에서 확인</div>
+            <div style="font-size:18px; font-weight:800;">추천 상품 미리보기</div>
+            <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">${who ? who + ' · ' : ''}${ymd} · 판매 TOP 10 · 가격은 메디마켓 링크에서 확인</div>
         </div>`;
     goToStep('preview');
 }
