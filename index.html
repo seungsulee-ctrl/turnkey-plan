@@ -1053,6 +1053,11 @@
             <div id="selectedCatList"></div>
         </div>
 
+        <div class="action-items" id="requestSection" style="display:none;">
+            <h3>💬 원장님 요청사항</h3>
+            <div id="requestList"></div>
+        </div>
+
         <div class="cta-section">
             <div class="cta-emoji">🏥</div>
             <h3 id="ctaTitle">설문 요약 완료</h3>
@@ -1191,8 +1196,9 @@ const state = {
     bed1: '', bed2: '', staff: '',
     totalBeds: 0, totalRooms: 0,
     selectedGroups: [],          // step2: group key 배열 (기본 미선택)
-    amounts: {},                 // step3: { groupKey: {mode:'package'|'custom', pkg, value} } (기본 미선택)
-    selectedCats: [],            // step4: 사용자가 켠 구카테고리명 (기본 미선택)
+    amounts: {},                 // (legacy, 4스텝화 후 미사용) 시트 호환 위해 유지
+    selectedCats: [],            // step3: 사용자가 켠 구카테고리명 (기본 미선택)
+    subRequests: {},             // step3: { 'groupKey_idx': '요청사항 텍스트' } (선택사항)
     contact: ''                  // step4: 성함/병원명
 };
 
@@ -1211,6 +1217,7 @@ function resetAll() {
     state.selectedGroups = [];
     state.amounts = {};
     state.selectedCats = [];
+    state.subRequests = {};
     state.contact = '';
 
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
@@ -1343,6 +1350,7 @@ function selectedSubCount() {
     GROUPS.filter(g => state.selectedGroups.includes(g.key)).forEach(g => g.subs.forEach(s => { if (subOn(s)) n++; }));
     return n;
 }
+function escAttr(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function renderSubCats() {
     const wrap = document.getElementById('subCatSelect');
     let html = '';
@@ -1350,10 +1358,20 @@ function renderSubCats() {
         html += `<div style="font-size:14px;font-weight:800;color:var(--accent);margin:16px 0 8px;">${g.label}</div>`;
         html += `<div class="split-cards">` + g.subs.map((s, idx) => {
             const on = subOn(s);
-            return `<div class="split-card ${on ? 'insurance' : ''}" style="cursor:pointer; ${on ? '' : 'opacity:0.5;'}" onclick="toggleSub('${g.key}',${idx})">
+            const reqKey = `${g.key}_${idx}`;
+            const reqVal = escAttr(state.subRequests[reqKey] || '');
+            const firstEg = s.eg ? s.eg.split(/[,·]/)[0].trim() : '';
+            const placeholder = escAttr(firstEg
+                ? `요청사항이 있으시다면 작성부탁드립니다. (예: ${firstEg}은 넣어주세요!)`
+                : '요청사항이 있으시다면 작성부탁드립니다.');
+            const card = `<div class="split-card ${on ? 'insurance' : ''}" style="cursor:pointer; ${on ? '' : 'opacity:0.5;'}" onclick="toggleSub('${g.key}',${idx})">
                 <div style="flex:1; min-width:0;"><div class="label">${s.label}</div>${s.eg ? `<div style="font-size:12px; color:var(--text-secondary); font-weight:400; margin-top:3px;">예: ${s.eg}</div>` : ''}</div>
                 <div class="value" style="flex-shrink:0;">${on ? '✓ 포함' : '선택'}</div>
             </div>`;
+            const textarea = on
+                ? `<textarea rows="2" placeholder="${placeholder}" oninput="setSubRequest('${reqKey}', this.value)" style="width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px; line-height:1.5; resize:vertical; margin:-4px 0 0; background:var(--bg-secondary,#fafbfc); color:inherit;">${reqVal}</textarea>`
+                : '';
+            return card + textarea;
         }).join('') + `</div>`;
     });
     wrap.innerHTML = html;
@@ -1363,10 +1381,16 @@ function toggleSub(groupKey, idx) {
     const sub = GROUP_BY_KEY[groupKey].subs[idx];
     if (subOn(sub)) {
         state.selectedCats = state.selectedCats.filter(c => !sub.cats.includes(c));
+        delete state.subRequests[`${groupKey}_${idx}`];  // 카드 해제 시 요청사항 폐기
     } else {
         sub.cats.forEach(c => { if (!state.selectedCats.includes(c)) state.selectedCats.push(c); });
     }
     renderSubCats();
+}
+function setSubRequest(key, val) {
+    const v = (val || '').trim();
+    if (v) state.subRequests[key] = val; else delete state.subRequests[key];
+    // 재렌더링하지 않음 — textarea의 포커스/커서 유지
 }
 function updateSubCatBadge() {
     document.getElementById('subCatBadge').textContent = selectedSubCount() + '개 선택';
@@ -1404,6 +1428,18 @@ function showResults() {
             return `<div class="action-item"><div class="action-dot"></div><div class="action-text"><strong>${g.label}</strong> <span style="color:var(--text-secondary);font-weight:400;">${items.join(' · ')}</span></div></div>`;
         }).join('');
 
+    // 요청사항 영역 — 입력된 게 있을 때만 표시
+    const reqRows = [];
+    GROUPS.filter(g => state.selectedGroups.includes(g.key)).forEach(g => {
+        g.subs.forEach((s, idx) => {
+            if (!subOn(s)) return;
+            const v = (state.subRequests[`${g.key}_${idx}`] || '').trim();
+            if (v) reqRows.push(`<div class="action-item"><div class="action-dot"></div><div class="action-text"><strong>${s.label}</strong><div style="color:var(--text-secondary);font-weight:400;margin-top:2px;white-space:pre-wrap;">${escAttr(v)}</div></div></div>`);
+        });
+    });
+    document.getElementById('requestSection').style.display = reqRows.length ? '' : 'none';
+    document.getElementById('requestList').innerHTML = reqRows.join('');
+
     goToStep('step4');
 }
 
@@ -1423,6 +1459,19 @@ function buildSlackMessage() {
         const items = groupCats(g).filter(c => state.selectedCats.includes(c));
         if (items.length) L.push(`    - ${g.label}: ${items.join(' · ')}`);
     });
+    // 요청사항 (선택사항, 있는 것만)
+    const reqLines = [];
+    GROUPS.filter(g => state.selectedGroups.includes(g.key)).forEach(g => {
+        g.subs.forEach((s, idx) => {
+            if (!subOn(s)) return;
+            const v = (state.subRequests[`${g.key}_${idx}`] || '').trim();
+            if (v) reqLines.push(`    - ${s.label}: ${v}`);
+        });
+    });
+    if (reqLines.length) {
+        L.push('• 요청사항:');
+        reqLines.forEach(l => L.push(l));
+    }
     const now = new Date();
     L.push(`_접수: ${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}_`);
     return L.join('\n');
